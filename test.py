@@ -9,10 +9,10 @@ from PIL import ImageDraw
 from PIL import ImageFont
 
 
-imagePath = './data/test/JPEGImages/000001.jpg'
+imagePath = './data/JPEGImages/000001.jpg'
 
 img_PIL = Image.open(imagePath)
-
+print(type(img_PIL))
 img_PIL = np.array(img_PIL)
 print(type(img_PIL))
 print("=======img_PIL shape:  ",img_PIL.shape)
@@ -29,7 +29,7 @@ print(np.array_equal(img_PIL, img_cv2))
 print(np.array_equal(img_PIL ,img_skimage))
 print(np.array_equal(img_cv2 , img_skimage))
 
-
+#img_PIL = cv2.flip(img_PIL,-1)
 img = Image.fromarray(np.uint8(img_PIL))
 draw = ImageDraw.Draw(img)
 draw.rectangle((100,100,300,300),outline = "red")
