@@ -30,6 +30,7 @@ print(np.array_equal(img_PIL ,img_skimage))
 print(np.array_equal(img_cv2 , img_skimage))
 
 #img_PIL = cv2.flip(img_PIL,-1)
+img_PIL = cv2.resize(img_PIL, (100, 100), interpolation=cv2.INTER_CUBIC)
 img = Image.fromarray(np.uint8(img_PIL))
 draw = ImageDraw.Draw(img)
 draw.rectangle((100,100,300,300),outline = "red")
