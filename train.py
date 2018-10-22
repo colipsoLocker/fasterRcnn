@@ -113,9 +113,10 @@ for epoch_num in range(num_epochs):
 
 			P_rpn = model_rpn.predict_on_batch(X) #测试rpn
 
-			#R:boxes, probs  返回经过npm后剩下的bbox以及对应的probs
+			#R:boxes, probs  返回经过npm后剩下的bbox以及对应的probs   （（左上，右下坐标），序号）    （anchors， 序号 ）
 			R = rpn_to_roi(P_rpn[0], P_rpn[1],  use_regr=True, overlap_thresh=0.7, max_boxes=300)
 			# note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
+			#X：[[x1, y1, w, h],...]  Y1：[classLabel1 ,......] Y1：[[0,0,1,0],....], [sx*tx, sy*ty, sw*tw, sh*th],...] 
 			X2, Y1, Y2, IouS = calc_iou(R, img_data, class_mapping )
 
 			if X2 is None:
@@ -123,8 +124,8 @@ for epoch_num in range(num_epochs):
 				rpn_accuracy_for_epoch.append(0)
 				continue
 
-			neg_samples = np.where(Y1[0, :, -1] == 1)
-			pos_samples = np.where(Y1[0, :, -1] == 0)
+			neg_samples = np.where(Y1[0, :, -1] == 1) #非背景 #直接对应坐标的位置
+			pos_samples = np.where(Y1[0, :, -1] == 0) #背景
 
 			if len(neg_samples) > 0:
 				neg_samples = neg_samples[0]
@@ -138,7 +139,7 @@ for epoch_num in range(num_epochs):
 			
 			rpn_accuracy_rpn_monitor.append(len(pos_samples))
 			rpn_accuracy_for_epoch.append((len(pos_samples)))
-			#看起来是均衡选择样本
+			#均衡选择样本
 			if config.num_rois > 1:
 				if len(pos_samples) < config.num_rois//2:
 					selected_pos_samples = pos_samples.tolist()
@@ -158,7 +159,10 @@ for epoch_num in range(num_epochs):
 					sel_samples = random.choice(neg_samples)
 				else:
 					sel_samples = random.choice(pos_samples)
-			#训练分类网络，得到分类和bbox回归
+			#训练分类网络，得到分类和bbox回归 对应 
+			# Model([img_input, roi_input], classifier)
+			# #np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug   #shared_layers, roi_input
+			# x:img_input , X2:roi_input Y2:np.concatenate([np.array(y_class_regr_label),np.array(y_class_regr_coords)]
 			loss_class = model_classifier.train_on_batch([X, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]])
 
 			losses[iter_num, 0] = loss_rpn[1]
@@ -200,7 +204,7 @@ for epoch_num in range(num_epochs):
 					if config.verbose:
 						print('Total loss decreased from {} to {}, saving weights'.format(best_loss,curr_loss))
 					best_loss = curr_loss
-					model_all.save('./models/model_all.h5')
+					model_all.save_weights('./models/model_all_weight.h5')
 
 				break
 #上面大段的代码都是在写如何计算损失函数。

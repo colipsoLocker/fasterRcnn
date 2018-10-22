@@ -55,3 +55,5 @@ class_mapping = None
 model_path = 'model_frcnn.vgg.hdf5'
 
 num_epochs = 10
+
+balanced_classes = False

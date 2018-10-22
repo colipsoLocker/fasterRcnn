@@ -551,7 +551,7 @@ def apply_regr(x, y, w, h, tx, ty, tw, th):
         return x, y, w, h
 
 
-def apply_regr_np(X, T):
+def apply_regr_np(X, T): #把偏移量作用到anchor上
 	try:
 		x = X[0, :, :]
 		y = X[1, :, :]
@@ -658,12 +658,12 @@ def non_max_suppression_fast(boxes, probs, overlap_thresh=0.9, max_boxes=300):
 def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300,overlap_thresh=0.9 ,C = config):
     '''
     @input:
-        rpn_layer , regr_layer 对应rpn网络的两个输出，分别是（0 , w, h , anchors）,（0 , w, h , anchors*4）
+        rpn_layer , regr_layer 对应rpn网络的两个输出，分别是（0 , h, w , anchors）,（0 , h, w , anchors*4）
     '''
     regr_layer = regr_layer / C.std_scaling
 
-    anchor_sizes = C.anchor_box_scales
-    anchor_ratios = C.anchor_box_ratios
+    anchor_sizes = C.anchor_box_scales #[128, 256, 512]
+    anchor_ratios = C.anchor_box_ratios # [[1, 1], [1./math.sqrt(2), 2./math.sqrt(2)], [2./math.sqrt(2), 1./math.sqrt(2)]]
 
     assert rpn_layer.shape[0] == 1
 
@@ -673,52 +673,52 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300,overlap_thres
 
     A = np.zeros((4, rpn_layer.shape[1], rpn_layer.shape[2], rpn_layer.shape[3])) #(4,w,h,anchors)
 
-    for anchor_size in anchor_sizes:
-        for anchor_ratio in anchor_ratios:
-            anchor_x = (anchor_size * anchor_ratio[0])/C.rpn_stride
+    for anchor_size in anchor_sizes: #128
+        for anchor_ratio in anchor_ratios: # [1,1]
+            anchor_x = (anchor_size * anchor_ratio[0])/C.rpn_stride #rpn_stride = 16 映射到特征图上的右下角坐标
             anchor_y = (anchor_size * anchor_ratio[1])/C.rpn_stride
 
-            regr = regr_layer[0, :, :, 4 * curr_layer:4 * curr_layer + 4]
+            regr = regr_layer[0, :, :, 4 * curr_layer:4 * curr_layer + 4] #一个layer是 不同的anchor，最多为9
             regr = np.transpose(regr, (2, 0, 1))
 
-            X, Y = np.meshgrid(np.arange(cols),np.arange(rows))
+            X, Y = np.meshgrid(np.arange(cols),np.arange(rows)) #对meshgrid的理解https://www.aliyun.com/jiaocheng/516456.html
 
-            A[0, :, :, curr_layer] = X - anchor_x/2
+            A[0, :, :, curr_layer] = X - anchor_x/2 #计算特征图上每个点对应anchor的中心点（可以算到图外）
             A[1, :, :, curr_layer] = Y - anchor_y/2
-            A[2, :, :, curr_layer] = anchor_x
-            A[3, :, :, curr_layer] = anchor_y
+            A[2, :, :, curr_layer] = anchor_x #对应的anchor高
+            A[3, :, :, curr_layer] = anchor_y #对应的anchor宽
 
             if use_regr:
-                A[:, :, :, curr_layer] = apply_regr_np(A[:, :, :, curr_layer], regr)
+                A[:, :, :, curr_layer] = apply_regr_np(A[:, :, :, curr_layer], regr) #把偏移量作用到anchor上 [x1, y1, w1, h1]
 
-            A[2, :, :, curr_layer] = np.maximum(1, A[2, :, :, curr_layer])
+            A[2, :, :, curr_layer] = np.maximum(1, A[2, :, :, curr_layer])  #去除左上点超出左边界的anchor
             A[3, :, :, curr_layer] = np.maximum(1, A[3, :, :, curr_layer])
-            A[2, :, :, curr_layer] += A[0, :, :, curr_layer]
+            A[2, :, :, curr_layer] += A[0, :, :, curr_layer] #获得右下角坐标
             A[3, :, :, curr_layer] += A[1, :, :, curr_layer]
 
-            A[0, :, :, curr_layer] = np.maximum(0, A[0, :, :, curr_layer])
+            A[0, :, :, curr_layer] = np.maximum(0, A[0, :, :, curr_layer]) #左上角坐标不能超过0
             A[1, :, :, curr_layer] = np.maximum(0, A[1, :, :, curr_layer])
-            A[2, :, :, curr_layer] = np.minimum(cols-1, A[2, :, :, curr_layer])
+            A[2, :, :, curr_layer] = np.minimum(cols-1, A[2, :, :, curr_layer]) #右下角坐标不能超过最大
             A[3, :, :, curr_layer] = np.minimum(rows-1, A[3, :, :, curr_layer])
 
             curr_layer += 1
 
-    all_boxes = np.reshape(A.transpose((0, 3, 1,2)), (4, -1)).transpose((1, 0))
-    all_probs = rpn_layer.transpose((0, 3, 1, 2)).reshape((-1))
+    all_boxes = np.reshape(A.transpose((0, 3, 1,2)), (4, -1)).transpose((1, 0)) # 变换后就是（（左上，右下坐标），序号）
+    all_probs = rpn_layer.transpose((0, 3, 1, 2)).reshape((-1)) #（0 , h, w , anchors） 转为 （anchors， 序号 ）
 
     x1 = all_boxes[:, 0]
     y1 = all_boxes[:, 1]
     x2 = all_boxes[:, 2]
     y2 = all_boxes[:, 3]
 
-    idxs = np.where((x1 - x2 >= 0) | (y1 - y2 >= 0))
+    idxs = np.where((x1 - x2 >= 0) | (y1 - y2 >= 0)) #删除不合理的anchor
 
     all_boxes = np.delete(all_boxes, idxs, 0)
     all_probs = np.delete(all_probs, idxs, 0)
 
     result = non_max_suppression_fast(all_boxes, all_probs, overlap_thresh=overlap_thresh, max_boxes=max_boxes)[0]
 
-    return result #boxes, probs  #返回经过npm后剩下的bbox以及对应的probs
+    return result #boxes, probs  #返回经过npm后剩下的bbox以及对应的probs （（左上，右下坐标），序号）    （anchors， 序号 ）
 
 
 
@@ -748,7 +748,7 @@ def calc_iou(R, img_data,  class_mapping, C=config):
     y_class_regr_label = []
     IoUs = [] # for debugging only
 
-    for ix in range(R.shape[0]):
+    for ix in range(R.shape[0]): #回归框个数
         (x1, y1, x2, y2) = R[ix, :]
         x1 = int(round(x1))
         y1 = int(round(y1))
@@ -776,13 +776,13 @@ def calc_iou(R, img_data,  class_mapping, C=config):
                 cls_name = 'bg'
             elif C.classifier_max_overlap <= best_iou:
                 cls_name = bboxes[best_bbox]['class']
-                cxg = (gta[best_bbox, 0] + gta[best_bbox, 1]) / 2.0
+                cxg = (gta[best_bbox, 0] + gta[best_bbox, 1]) / 2.0 #中心点
                 cyg = (gta[best_bbox, 2] + gta[best_bbox, 3]) / 2.0
 
                 cx = x1 + w / 2.0
                 cy = y1 + h / 2.0
 
-                tx = (cxg - cx) / float(w)
+                tx = (cxg - cx) / float(w) #anchor和gt的差距
                 ty = (cyg - cy) / float(h)
                 tw = np.log((gta[best_bbox, 1] - gta[best_bbox, 0]) / float(w))
                 th = np.log((gta[best_bbox, 3] - gta[best_bbox, 2]) / float(h))
@@ -799,12 +799,12 @@ def calc_iou(R, img_data,  class_mapping, C=config):
         if cls_name != 'bg':
             label_pos = 4 * class_num
             sx, sy, sw, sh = C.classifier_regr_std
-            coords[label_pos:4+label_pos] = [sx*tx, sy*ty, sw*tw, sh*th]
+            coords[label_pos:4+label_pos] = [sx*tx, sy*ty, sw*tw, sh*th] #前景
             labels[label_pos:4+label_pos] = [1, 1, 1, 1]
             y_class_regr_coords.append(copy.deepcopy(coords))
             y_class_regr_label.append(copy.deepcopy(labels))
         else:
-            y_class_regr_coords.append(copy.deepcopy(coords))
+            y_class_regr_coords.append(copy.deepcopy(coords)) #背景
             y_class_regr_label.append(copy.deepcopy(labels))
 
     if len(x_roi) == 0:
@@ -814,6 +814,8 @@ def calc_iou(R, img_data,  class_mapping, C=config):
     Y1 = np.array(y_class_num)
     Y2 = np.concatenate([np.array(y_class_regr_label),np.array(y_class_regr_coords)],axis=1)
 
+
+    #X：[[x1, y1, w, h],...]  Y1：[classLabel1 ,......] Y1：[[0,0,1,0],....] , [sx*tx, sy*ty, sw*tw, sh*th],...] 
     return np.expand_dims(X, axis=0), np.expand_dims(Y1, axis=0), np.expand_dims(Y2, axis=0), IoUs
 
 
