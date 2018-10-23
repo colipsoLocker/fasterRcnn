@@ -107,10 +107,12 @@ for epoch_num in range(num_epochs):
 				if mean_overlapping_bboxes == 0:
 					print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
 
+			print('Begin to generate data for train')
 			X, Y, img_data = next(data_gen_train) #np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug 用来给分类网络的输入
 
+			print('Begin to train model_rpn')
 			loss_rpn = model_rpn.train_on_batch(X, Y) #训练model_rpn
-
+			print('Predict rpn')
 			P_rpn = model_rpn.predict_on_batch(X) #测试rpn
 
 			#R:boxes, probs  返回经过npm后剩下的bbox以及对应的probs   （（左上，右下坐标），序号）    （anchors， 序号 ）

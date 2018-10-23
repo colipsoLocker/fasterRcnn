@@ -12,7 +12,8 @@ import itertools
 import pdb
 import numpy as np
 import math
-
+import pprint
+import time
 
 
 def get_data(data_path = './data'):
@@ -459,12 +460,19 @@ def get_anchor_gt(all_img_data, class_count,  img_length_calc_function,  C = con
     # all_img_data = sorted(all_img_data)
 
     sample_selector = SampleSelector(class_count)
+    
+    pprint.pprint(all_img_data[0])
+    print('Begin get_anchor_gt')
 
     while True:
+        #debug
+        i = 0
+        #enddebug
         if mode == 'train':
             np.random.shuffle(all_img_data)
 
         for img_data in all_img_data:
+            print(time.asctime( time.localtime(time.time()) ) + 'Get anchor begin deal img_data')
             try:
                 if C.balanced_classes and sample_selector.skip_sample_for_balanced_class(img_data):
                     continue
@@ -488,11 +496,14 @@ def get_anchor_gt(all_img_data, class_count,  img_length_calc_function,  C = con
 
                 # resize the image so that smalles side is length = 600px 用PIL读图，用cv2来处理是个不错的方法，在test中已验证
                 x_img = cv2.resize(x_img, (resized_width, resized_height), interpolation=cv2.INTER_CUBIC)
+                
+                print('Get resized x_img')
 
                 try:
                     #返回 (num_anchors ,output_height, output_width) (num_anchors*4 ,output_height, output_width )
-                    y_rpn_cls, y_rpn_regr = calc_rpn(C, img_data_aug, width, height, resized_width, resized_height, img_length_calc_function)
-                except:
+                    y_rpn_cls, y_rpn_regr = calc_rpn(img_data_aug, width, height, resized_width, resized_height, img_length_calc_function)
+                except Exception as e:
+                    print( e )
                     continue
 
                 # Zero-center by mean pixel, and preprocess image
@@ -513,11 +524,13 @@ def get_anchor_gt(all_img_data, class_count,  img_length_calc_function,  C = con
                 x_img = np.transpose(x_img, (0, 2, 3, 1)) # 0 ， 长， 宽 ， 颜色
                 y_rpn_cls = np.transpose(y_rpn_cls, (0, 2, 3, 1))  # 0 ， 长， 宽 ， 值
                 y_rpn_regr = np.transpose(y_rpn_regr, (0, 2, 3, 1)) # 0 ， 长， 宽 ， 值
-
+                #debug
+                print('yield')
+                #enddebug
                 yield np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug
 
             except Exception as e:
-                print(e)
+                print('Error2 : ' + e)
                 continue
 
 

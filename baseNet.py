@@ -3,6 +3,7 @@ from tensorflow.keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D, 
 from RoiPoolingConv import RoiPoolingConv
 from tensorflow.keras.models import Model
 from tensorflow.keras.utils import get_file 
+from tensorflow.keras.applications import VGG16
 
 def get_img_output_length(width, height):
     def get_output_length(input_length):
@@ -12,7 +13,7 @@ def get_img_output_length(width, height):
 
 
 
-def nn_base(input_tensor=None, trainable=False):
+def nn_base(input_tensor=None, trainable=False ,trainBySelf = False):
 
 
     # Determine proper input shape
@@ -25,34 +26,75 @@ def nn_base(input_tensor=None, trainable=False):
 
  
     bn_axis = 3
-
+    if trainBySelf:
     # Block 1
-    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1')(img_input)
-    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2')(x)
-    x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x)
+        x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1')(img_input)
+        x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2')(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x)
 
-    # Block 2
-    x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1')(x)
-    x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2')(x)
-    x = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x)
+        # Block 2
+        x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1')(x)
+        x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2')(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x)
 
-    # Block 3
-    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1')(x)
-    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2')(x)
-    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3')(x)
-    x = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x)
+        # Block 3
+        x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1')(x)
+        x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2')(x)
+        x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3')(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x)
 
-    # Block 4
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv1')(x)
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv2')(x)
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv3')(x)
-    x = MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool')(x)
+        # Block 4
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv1')(x)
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv2')(x)
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv3')(x)
+        x = MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool')(x)
 
-    # Block 5
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv1')(x)
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv2')(x)
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3')(x)
-    # x = MaxPooling2D((2, 2), strides=(2, 2), name='block5_pool')(x)
+        # Block 5
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv1')(x)
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv2')(x)
+        x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3')(x)
+        # x = MaxPooling2D((2, 2), strides=(2, 2), name='block5_pool')(x)
+    else:
+        base_model = VGG16(include_top=False,weights='imagenet')
+        #block1
+        x = base_model.get_layer('block1_conv1')(img_input)
+        base_model.get_layer('block1_conv1').trainable = False
+        x = base_model.get_layer('block1_conv2')(x)
+        base_model.get_layer('block1_conv2').trainable = False
+        x = base_model.get_layer('block1_pool')(x)
+        base_model.get_layer('block1_pool').trainable = False
+        #block2
+        x = base_model.get_layer('block2_conv1')(x)
+        base_model.get_layer('block2_conv1').trainable = False
+        x = base_model.get_layer('block2_conv2')(x)
+        base_model.get_layer('block2_conv2').trainable = False
+        x = base_model.get_layer('block2_pool')(x)
+        base_model.get_layer('block2_pool').trainable = False
+        #block3
+        x = base_model.get_layer('block3_conv1')(x)
+        base_model.get_layer('block3_conv1').trainable = False
+        x = base_model.get_layer('block3_conv2')(x)
+        base_model.get_layer('block3_conv2').trainable = False
+        x = base_model.get_layer('block3_conv3')(x)
+        base_model.get_layer('block3_conv3').trainable = False
+        x = base_model.get_layer('block3_pool')(x)
+        base_model.get_layer('block3_pool').trainable = False
+        #block4
+        x = base_model.get_layer('block4_conv1')(x)
+        base_model.get_layer('block4_conv1').trainable = False
+        x = base_model.get_layer('block4_conv2')(x)
+        base_model.get_layer('block4_conv2').trainable = False
+        x = base_model.get_layer('block4_conv3')(x)
+        base_model.get_layer('block4_conv3').trainable = False
+        x = base_model.get_layer('block4_pool')(x)
+        base_model.get_layer('block4_pool').trainable = False
+        #block5
+        x = base_model.get_layer('block5_conv1')(x)
+        base_model.get_layer('block5_conv1').trainable = False
+        x = base_model.get_layer('block5_conv2')(x)
+        base_model.get_layer('block5_conv2').trainable = False
+        x = base_model.get_layer('block5_conv3')(x)
+        base_model.get_layer('block5_conv3').trainable = False
 
     return x
 
