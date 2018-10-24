@@ -111,6 +111,12 @@ for epoch_num in range(num_epochs):
 			X, Y, img_data = next(data_gen_train) #np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug 用来给分类网络的输入
 
 			print('Begin to train model_rpn')
+			#test
+			print(np.shape(X))
+			print(np.shape(Y[0]),'   ',np.shape(Y[1]))
+			P_rpn = model_rpn.predict_on_batch(X)
+			print(np.shape(P_rpn[0]),'   ',np.shape(P_rpn[1]))
+			#endtest
 			loss_rpn = model_rpn.train_on_batch(X, Y) #训练model_rpn
 			print('Predict rpn')
 			P_rpn = model_rpn.predict_on_batch(X) #测试rpn

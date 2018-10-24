@@ -4,6 +4,7 @@ from RoiPoolingConv import RoiPoolingConv
 from tensorflow.keras.models import Model
 from tensorflow.keras.utils import get_file 
 from tensorflow.keras.applications import VGG16
+import numpy as np
 
 def get_img_output_length(width, height):
     def get_output_length(input_length):
@@ -106,7 +107,9 @@ def rpn(base_layers, num_anchors):
     x_class = Conv2D(num_anchors, (1, 1), activation='sigmoid', kernel_initializer='uniform', name='rpn_out_class')(x)
     #x_regr 输出的是对应的四个坐标
     x_regr = Conv2D(num_anchors * 4, (1, 1), activation='linear', kernel_initializer='zero', name='rpn_out_regress')(x)
-
+    print("Debug rpn layer output shape")
+    print(np.shape(x_class))
+    print(np.shape(x_regr))
     return [x_class, x_regr, base_layers]
 
 
