@@ -75,7 +75,7 @@ model_all.compile(optimizer='sgd', loss='mae')
 
 
 #手工定义训练阶段
-epoch_length = 1000
+epoch_length = config.epoch_length
 num_epochs = int(config.num_epochs)
 iter_num = 0
 
@@ -107,18 +107,18 @@ for epoch_num in range(num_epochs):
 				if mean_overlapping_bboxes == 0:
 					print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
 
-			print('Begin to generate data for train')
+			#print('Begin to generate data for train')
 			X, Y, img_data = next(data_gen_train) #np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug 用来给分类网络的输入
 
-			print('Begin to train model_rpn')
+			#print('Begin to train model_rpn')
 			#test
-			print(np.shape(X))
-			print(np.shape(Y[0]),'   ',np.shape(Y[1]))
-			P_rpn = model_rpn.predict_on_batch(X)
-			print(np.shape(P_rpn[0]),'   ',np.shape(P_rpn[1]))
+			#print(np.shape(X))
+			#print(np.shape(Y[0]),'   ',np.shape(Y[1]))
+			#P_rpn = model_rpn.predict_on_batch(X)
+			#print(np.shape(P_rpn[0]),'   ',np.shape(P_rpn[1]))
 			#endtest
 			loss_rpn = model_rpn.train_on_batch(X, Y) #训练model_rpn
-			print('Predict rpn')
+			#print('Predict rpn')
 			P_rpn = model_rpn.predict_on_batch(X) #测试rpn
 
 			#R:boxes, probs  返回经过npm后剩下的bbox以及对应的probs   （（左上，右下坐标），序号）    （anchors， 序号 ）

@@ -420,8 +420,8 @@ def calc_rpn(img_data, width, height, resized_width, resized_height, img_length_
     y_rpn_overlap = np.transpose(y_rpn_overlap, (2, 0, 1)) #把值放在第一个纬度，
     y_rpn_overlap = np.expand_dims(y_rpn_overlap, axis=0) #为后续送入网络方便，增加第0纬
     #debug
-    print("y_rpn_overlap shape:")
-    print(np.shape(y_rpn_overlap))
+    #print("y_rpn_overlap shape:")
+    #print(np.shape(y_rpn_overlap))
     #enddebug
 
 
@@ -449,15 +449,22 @@ def calc_rpn(img_data, width, height, resized_width, resized_height, img_length_
         val_locs = random.sample(range(len(neg_locs[0])), len(neg_locs[0]) - num_pos) #保持正负样本均衡
         y_is_box_valid[0, neg_locs[0][val_locs], neg_locs[1][val_locs], neg_locs[2][val_locs]] = 0
 
+    #debug
+    #print('calc_rpn before')
+    #print(np.shape(y_is_box_valid))
+    #print(np.shape(y_rpn_overlap))
+    #print(np.shape(y_rpn_regr))
+    #enddebug
+
     y_rpn_cls = np.concatenate([y_is_box_valid, y_rpn_overlap], axis=1) #矩阵合并，y_rpn_cls：是否包含类，其前半段是该anchor是否可用
     y_rpn_regr = np.concatenate([np.repeat(y_rpn_overlap, 4, axis=1), y_rpn_regr], axis=1) #y_rpn_regr：回归梯度，前半段包含是否有效
 
     #debug
-    print('calc_rpn')
-    print(np.shape(y_is_box_valid))
-    print(np.shape(y_rpn_overlap))
-    print(np.shape(y_rpn_cls))
-    print(np.shape(y_rpn_regr))
+    #print('calc_rpn after')
+    #print(np.shape(y_is_box_valid))
+    #print(np.shape(y_rpn_overlap))
+    #print(np.shape(y_rpn_cls))
+    #print(np.shape(y_rpn_regr))
     #enddebug
     return np.copy(y_rpn_cls), np.copy(y_rpn_regr) #返回 (num_anchors ,output_height, output_width, ) (num_anchors*4 ,output_height, output_width )
 
@@ -478,13 +485,13 @@ def get_anchor_gt(all_img_data, class_count,  img_length_calc_function,  C = con
 
     while True:
         #debug
-        i = 0
+        #i = 0
         #enddebug
         if mode == 'train':
             np.random.shuffle(all_img_data)
 
         for img_data in all_img_data:
-            print(time.asctime( time.localtime(time.time()) ) + 'Get anchor begin deal img_data')
+            #print(time.asctime( time.localtime(time.time()) ) + 'Get anchor begin deal img_data')
             try:
                 if C.balanced_classes and sample_selector.skip_sample_for_balanced_class(img_data):
                     continue
@@ -509,7 +516,7 @@ def get_anchor_gt(all_img_data, class_count,  img_length_calc_function,  C = con
                 # resize the image so that smalles side is length = 600px 用PIL读图，用cv2来处理是个不错的方法，在test中已验证
                 x_img = cv2.resize(x_img, (resized_width, resized_height), interpolation=cv2.INTER_CUBIC)
                 
-                print('Get resized x_img')
+                #print('Get resized x_img')
 
                 try:
                     #返回 (num_anchors ,output_height, output_width) (num_anchors*4 ,output_height, output_width )
@@ -537,8 +544,8 @@ def get_anchor_gt(all_img_data, class_count,  img_length_calc_function,  C = con
                 y_rpn_cls = np.transpose(y_rpn_cls, (0, 2, 3, 1))  # 0 ， 长， 宽 ， 值
                 y_rpn_regr = np.transpose(y_rpn_regr, (0, 2, 3, 1)) # 0 ， 长， 宽 ， 值
                 #debug
-                print('yield')
-                print(np.shape(x_img) , np.shape(y_rpn_cls) , np.shape(y_rpn_regr))
+                #print('yield')
+                #print(np.shape(x_img) , np.shape(y_rpn_cls) , np.shape(y_rpn_regr))
                 #enddebug
                 yield np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug
 

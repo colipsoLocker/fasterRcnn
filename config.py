@@ -56,4 +56,6 @@ model_path = 'model_frcnn.vgg.hdf5'
 
 num_epochs = 10
 
+epoch_length = 100
+
 balanced_classes = False
