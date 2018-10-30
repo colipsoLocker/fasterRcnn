@@ -480,8 +480,9 @@ def get_anchor_gt(all_img_data, class_count,  img_length_calc_function,  C = con
 
     sample_selector = SampleSelector(class_count)
     
-    pprint.pprint(all_img_data[0])
-    print('Begin get_anchor_gt')
+    #pprint.pprint(all_img_data[0])
+    #
+    # print('Begin get_anchor_gt')
 
     while True:
         #debug
@@ -751,7 +752,7 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300,overlap_thres
 
     result = non_max_suppression_fast(all_boxes, all_probs, overlap_thresh=overlap_thresh, max_boxes=max_boxes)[0]
 
-    return result #boxes, probs  #返回经过npm后剩下的bbox以及对应的probs （（左上，右下坐标），序号）    （anchors， 序号 ）
+    return result #boxes  #返回经过npm后剩下的bbox （（左上，右下坐标），序号）  
 
 
 
@@ -848,7 +849,7 @@ def calc_iou(R, img_data,  class_mapping, C=config):
     Y2 = np.concatenate([np.array(y_class_regr_label),np.array(y_class_regr_coords)],axis=1)
 
 
-    #X：[[x1, y1, w, h],...]  Y1：[classLabel1 ,......] Y1：[[0,0,1,0],....] , [sx*tx, sy*ty, sw*tw, sh*th],...] 
+    #X：[[x1, y1, w, h],...]  Y1：[[0,0,1,0]] ,......] Y2：[[1,1,1,1],....] , [sx*tx, sy*ty, sw*tw, sh*th],...] 
     return np.expand_dims(X, axis=0), np.expand_dims(Y1, axis=0), np.expand_dims(Y2, axis=0), IoUs
 
 

@@ -10,6 +10,7 @@ import config
 import losses
 import numpy as np
 import time
+import json
 
 
 
@@ -20,6 +21,10 @@ if 'bg' not in classes_count: #补充背景类型
 	class_mapping['bg'] = len(class_mapping)
 
 inv_map = {v: k for k, v in class_mapping.items()} #图像序号转换{序号：class_name}
+
+json.dump(inv_map , open('./models/inv_map.json','w'))
+json.dump(classes_count , open('./models/classes_count.json','w'))
+json.dump(class_mapping , open('./models/class_mapping.json','w'))
 
 pprint.pprint(classes_count)
 pprint.pprint(class_mapping)
@@ -124,7 +129,7 @@ for epoch_num in range(num_epochs):
 			#R:boxes, probs  返回经过npm后剩下的bbox以及对应的probs   （（左上，右下坐标），序号）    （anchors， 序号 ）
 			R = rpn_to_roi(P_rpn[0], P_rpn[1],  use_regr=True, overlap_thresh=0.7, max_boxes=300)
 			# note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
-			#X：[[x1, y1, w, h],...]  Y1：[classLabel1 ,......] Y1：[[0,0,1,0],....], [sx*tx, sy*ty, sw*tw, sh*th],...] 
+			#X：[[x1, y1, w, h],...]  Y1：[[0,0,1,0]] ,......] Y2：[[1,1,1,1],....] , [sx*tx, sy*ty, sw*tw, sh*th],...] 
 			X2, Y1, Y2, IouS = calc_iou(R, img_data, class_mapping )
 
 			if X2 is None:
